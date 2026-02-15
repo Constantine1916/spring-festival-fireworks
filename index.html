@@ -1,0 +1,1709 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>新春手势烟花</title>
+    <style>
+      :root {
+        --bg1: #020202;
+        --bg2: #060606;
+        --bg3: #0a0a0a;
+        --gold: #ffd76a;
+        --text: #fef8e3;
+        --accent: #ff4d72;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        font-family:
+          "STKaiti", "KaiTi", "PingFang SC", "Hiragino Sans GB", sans-serif;
+        color: var(--text);
+      }
+
+      canvas {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        background: #000;
+      }
+
+      #video {
+        position: fixed;
+        right: 14px;
+        top: 14px;
+        width: 180px;
+        border-radius: 12px;
+        opacity: 0.18;
+        transform: scaleX(-1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+        z-index: 15;
+      }
+
+      .hud {
+        position: fixed;
+        left: 18px;
+        top: 18px;
+        z-index: 20;
+        max-width: min(86vw, 640px);
+        padding: 14px 18px;
+        border-radius: 14px;
+        background: rgba(5, 8, 21, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        backdrop-filter: blur(8px);
+        line-height: 1.55;
+        font-size: clamp(13px, 1.2vw, 15px);
+        letter-spacing: 0.4px;
+      }
+
+      .hud strong {
+        color: var(--gold);
+        font-weight: 700;
+      }
+
+      .state-dot {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        margin-right: 8px;
+        background: #ff7e7e;
+        box-shadow: 0 0 12px rgba(255, 126, 126, 0.8);
+        vertical-align: middle;
+      }
+
+      .state-dot.live {
+        background: #73ffaf;
+        box-shadow: 0 0 12px rgba(115, 255, 175, 0.8);
+      }
+
+      #blessing {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%) scale(0.84);
+        text-align: center;
+        opacity: 0;
+        z-index: 30;
+        transition:
+          opacity 520ms ease,
+          transform 620ms cubic-bezier(0.2, 0.65, 0.2, 1);
+        pointer-events: none;
+      }
+
+      #blessing.show {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+
+      #horseGreeting {
+        position: fixed;
+        left: 50%;
+        top: 24%;
+        transform: translate(-50%, -50%) scale(0.92);
+        z-index: 28;
+        pointer-events: none;
+        opacity: 0;
+        padding: 8px 18px;
+        border-radius: 12px;
+        color: #ffe8b2;
+        font-size: clamp(28px, 4.6vw, 64px);
+        letter-spacing: clamp(4px, 0.8vw, 10px);
+        font-weight: 700;
+        text-shadow:
+          0 0 10px rgba(255, 220, 140, 0.55),
+          0 0 26px rgba(255, 136, 88, 0.4),
+          0 0 44px rgba(255, 186, 110, 0.22);
+        transition:
+          opacity 420ms ease,
+          transform 520ms cubic-bezier(0.2, 0.7, 0.2, 1);
+      }
+
+      #horseGreeting.show {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+
+      .duilian-wrap {
+        position: relative;
+        width: min(78vw, 640px);
+        min-height: min(66vh, 520px);
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .hengpi {
+        position: absolute;
+        top: clamp(0px, 0.2vh, 6px);
+        left: 50%;
+        transform: translateX(-50%);
+        padding: clamp(6px, 0.9vw, 10px) clamp(16px, 2.2vw, 28px);
+        border-radius: 10px;
+        font-size: clamp(18px, 2.4vw, 34px);
+        letter-spacing: clamp(2px, 0.4vw, 6px);
+        font-weight: 700;
+        color: #ffe8b2;
+        background: linear-gradient(180deg, #8d1212, #5f0909);
+        border: 1px solid rgba(255, 220, 140, 0.55);
+        box-shadow:
+          0 0 24px rgba(255, 116, 92, 0.28),
+          inset 0 0 14px rgba(255, 174, 104, 0.18);
+        text-shadow: 0 0 8px rgba(255, 220, 128, 0.4);
+        direction: rtl;
+        unicode-bidi: bidi-override;
+      }
+
+      .core-box {
+        margin-top: clamp(38px, 6vh, 62px);
+        padding: clamp(20px, 2.8vw, 34px) clamp(22px, 3.2vw, 44px);
+        border-radius: 14px;
+        background: linear-gradient(
+          180deg,
+          rgba(110, 14, 14, 0.9),
+          rgba(74, 9, 9, 0.92)
+        );
+        border: 1px solid rgba(255, 218, 145, 0.5);
+        box-shadow:
+          0 0 30px rgba(255, 122, 88, 0.22),
+          inset 0 0 22px rgba(255, 160, 92, 0.15);
+        min-width: clamp(180px, 30vw, 260px);
+      }
+
+      .fu-char {
+        font-size: clamp(86px, 14vw, 180px);
+        line-height: 0.95;
+        letter-spacing: clamp(2px, 0.6vw, 10px);
+        color: #ffe7b0;
+        text-shadow:
+          0 0 12px rgba(255, 218, 146, 0.5),
+          0 0 34px rgba(255, 132, 90, 0.38);
+        font-weight: 700;
+      }
+
+      .lian {
+        position: absolute;
+        top: clamp(64px, 10vh, 86px);
+        bottom: clamp(28px, 5vh, 40px);
+        width: clamp(52px, 7vw, 84px);
+        padding: 10px 0;
+        writing-mode: vertical-rl;
+        text-orientation: upright;
+        letter-spacing: clamp(2px, 0.42vw, 7px);
+        font-size: clamp(24px, 3.2vw, 44px);
+        color: #ffe8b4;
+        background: linear-gradient(180deg, #951414, #620b0b);
+        border: 1px solid rgba(255, 220, 140, 0.58);
+        border-radius: 12px;
+        box-shadow:
+          0 0 26px rgba(255, 112, 78, 0.28),
+          inset 0 0 20px rgba(255, 180, 110, 0.14);
+        text-shadow: 0 0 10px rgba(255, 216, 130, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+      }
+
+      .lian-right {
+        right: clamp(0px, 0.8vw, 12px);
+      }
+
+      .lian-left {
+        left: clamp(0px, 0.8vw, 12px);
+      }
+
+      #hongbaoRain {
+        position: fixed;
+        inset: 0;
+        z-index: 27;
+        pointer-events: none;
+        overflow: hidden;
+      }
+
+      .hb {
+        position: absolute;
+        top: -12%;
+        font-size: clamp(16px, 2.1vw, 30px);
+        opacity: 0.88;
+        will-change: transform, opacity;
+        filter: drop-shadow(0 0 8px rgba(255, 116, 84, 0.28));
+        animation-name: hbFall;
+        animation-timing-function: linear;
+        animation-fill-mode: forwards;
+      }
+
+      @keyframes hbFall {
+        0% {
+          transform: translate3d(0, -10vh, 0) rotate(0deg);
+          opacity: 0;
+        }
+        8% {
+          opacity: 0.95;
+        }
+        100% {
+          transform: translate3d(var(--dx), 112vh, 0) rotate(var(--rot));
+          opacity: 0.08;
+        }
+      }
+
+      #introCenterHint {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%) scale(0.96);
+        z-index: 29;
+        padding: clamp(12px, 1.8vw, 20px) clamp(16px, 2.4vw, 30px);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 230, 170, 0.32);
+        background: linear-gradient(
+          180deg,
+          rgba(18, 10, 4, 0.56),
+          rgba(10, 6, 2, 0.68)
+        );
+        box-shadow: 0 0 26px rgba(255, 172, 90, 0.2);
+        color: #ffeec0;
+        font-size: clamp(18px, 2.4vw, 34px);
+        letter-spacing: clamp(1px, 0.25vw, 4px);
+        text-align: center;
+        text-shadow: 0 0 10px rgba(255, 220, 130, 0.45);
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 360ms ease,
+          transform 420ms ease;
+      }
+
+      #introCenterHint.show {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+
+      @media (max-width: 760px) {
+        #video {
+          width: 108px;
+          opacity: 0.14;
+          top: 10px;
+          right: 10px;
+        }
+
+        .hud {
+          left: 10px;
+          top: 10px;
+          max-width: calc(100vw - 20px);
+          padding: 10px 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="stage"></canvas>
+    <video id="video" autoplay muted playsinline></video>
+
+    <div class="hud">
+      <div>
+        <span id="statusDot" class="state-dot"></span
+        ><strong id="statusText">准备中：正在连接手势识别...</strong>
+      </div>
+      <div>✋ <strong>五指张开并停住 0.5 秒</strong>：开启绚丽烟花表演</div>
+      <div>
+        ☝️ <strong>单指移动</strong>：沿移动方向依次升空烟花（低频轨迹）
+      </div>
+      <div>✌️ <strong>手势保持 0.6 秒</strong>：释放超级烟花</div>
+      <div>
+        ✊ <strong>握拳持续约 1 秒</strong>：可直接收官（结束模式内更稳定）
+      </div>
+    </div>
+
+    <div id="blessing">
+      <div class="duilian-wrap">
+        <div class="hengpi">馬年大吉</div>
+        <div class="lian lian-right">金馬迎春財運旺</div>
+        <div class="lian lian-left">平安喜樂福滿堂</div>
+        <div class="core-box">
+          <div class="fu-char">福</div>
+        </div>
+      </div>
+    </div>
+    <div id="horseGreeting">新春快乐</div>
+    <div id="hongbaoRain"></div>
+    <div id="introCenterHint">
+      请将手放入画面，五指张开并停住 0.5 秒开启表演
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script>
+      const canvas = document.getElementById("stage");
+      const ctx = canvas.getContext("2d");
+      const video = document.getElementById("video");
+      const blessing = document.getElementById("blessing");
+      const horseGreeting = document.getElementById("horseGreeting");
+      const hongbaoRain = document.getElementById("hongbaoRain");
+      const introCenterHint = document.getElementById("introCenterHint");
+      const statusText = document.getElementById("statusText");
+      const statusDot = document.getElementById("statusDot");
+
+      let width = window.innerWidth;
+      let height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+
+      const gravity = 0.028;
+      const rockets = [];
+      const superRockets = [];
+      const sparks = [];
+      const trails = [];
+      const horseStars = [];
+      const shockwaves = [];
+
+      let showRunning = false;
+      let finishTriggered = false;
+      let openness = 0;
+      let lastAutoLaunch = 0;
+      let lastPointerLaunch = 0;
+      let lastSuperLaunch = 0;
+      let superTracking = false;
+      let startHoldFrames = 0;
+      let fistDirectFrames = 0;
+      let fistGuardUntil = 0;
+      let introNoHandShown = false;
+      let introPromptPending = false;
+      let introPromptMinTime = 0;
+      let introCenterVisible = false;
+      let introCenterText = "";
+      let introSoundReplayDone = false;
+      let horseFinaleActive = false;
+      let hongbaoRainTimer = null;
+      let pointerLast = { x: 0, y: 0 };
+      let pointerVisible = false;
+      let lastPathEmit = null;
+      let screenFlash = 0;
+      let currentStatus = "";
+      let audioCtx = null;
+      let noiseBuffer = null;
+      let impulseBuffer = null;
+      let audioEnabled = true;
+      let audioUnlocked = false;
+      let lastSoundAt = 0;
+      let lastSuperSoundAt = 0;
+      const PATH_STEP = 26;
+      const PATH_COOLDOWN = 300;
+      const PATH_FALLBACK = 520;
+      const SUPER_PATH_STEP = 24;
+      const SUPER_PATH_COOLDOWN = 580;
+      const SUPER_PATH_FALLBACK = 980;
+
+      function setStatus(text, live = false) {
+        if (
+          text === currentStatus &&
+          statusDot.classList.contains("live") === live
+        )
+          return;
+        currentStatus = text;
+        statusText.textContent = text;
+        statusDot.classList.toggle("live", live);
+      }
+
+      function setIntroCenterHint(
+        visible,
+        text = "请将手放入画面，五指张开并停住 0.5 秒开启表演"
+      ) {
+        if (visible === introCenterVisible && text === introCenterText) return;
+        introCenterVisible = visible;
+        introCenterText = text;
+        introCenterHint.textContent = text;
+        introCenterHint.classList.toggle("show", visible);
+      }
+
+      function maybeShowIntroCenterHint(now) {
+        if (!introPromptPending) return;
+        if (now < introPromptMinTime) return;
+        introPromptPending = false;
+        if (!showRunning && !finishTriggered) {
+          setIntroCenterHint(true);
+          setStatus("请将手放入画面，五指张开并停住 0.5 秒开启表演", false);
+        }
+      }
+
+      function launchIntroBatch(count = 7, interval = 140, power = 1) {
+        for (let i = 0; i < count; i++) {
+          setTimeout(() => {
+            launchRocket(
+              rnd(width * 0.12, width * 0.88),
+              rnd(height * 0.2, height * 0.52),
+              power
+            );
+          }, i * interval);
+        }
+      }
+
+      function spawnHongbaoBurst(batch = 12) {
+        for (let i = 0; i < batch; i++) {
+          const n = document.createElement("span");
+          n.className = "hb";
+          n.textContent = "🧧";
+          const left = rnd(-4, 96);
+          const dx = `${rnd(-14, 14)}vw`;
+          const rot = `${rnd(-110, 120)}deg`;
+          const dur = rnd(4.8, 8.2);
+          const delay = rnd(0, 0.6);
+          const size = rnd(0.9, 1.35);
+          n.style.left = `${left}%`;
+          n.style.setProperty("--dx", dx);
+          n.style.setProperty("--rot", rot);
+          n.style.animationDuration = `${dur}s`;
+          n.style.animationDelay = `${delay}s`;
+          n.style.transform = `scale(${size})`;
+          hongbaoRain.appendChild(n);
+          setTimeout(() => n.remove(), (dur + delay + 0.3) * 1000);
+        }
+      }
+
+      function startHongbaoRain() {
+        stopHongbaoRain();
+        spawnHongbaoBurst(18);
+        hongbaoRainTimer = setInterval(() => spawnHongbaoBurst(10), 900);
+      }
+
+      function stopHongbaoRain() {
+        if (hongbaoRainTimer) {
+          clearInterval(hongbaoRainTimer);
+          hongbaoRainTimer = null;
+        }
+        hongbaoRain.innerHTML = "";
+      }
+
+      function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+      window.addEventListener("resize", resize);
+
+      function rnd(min, max) {
+        return min + Math.random() * (max - min);
+      }
+
+      function randomColor() {
+        const palette = [
+          "#ff4f8b",
+          "#ff7f50",
+          "#ffd95b",
+          "#5effe1",
+          "#7ea5ff",
+          "#b680ff",
+          "#95ff73",
+          "#ffb347",
+          "#ff5d5d",
+          "#40d5ff",
+        ];
+        return palette[(Math.random() * palette.length) | 0];
+      }
+
+      function setupAudio() {
+        if (audioCtx) return;
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) {
+          audioEnabled = false;
+          return;
+        }
+        audioCtx = new Ctx();
+        const sampleRate = audioCtx.sampleRate;
+        noiseBuffer = audioCtx.createBuffer(1, sampleRate * 1.2, sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+          const white = Math.random() * 2 - 1;
+          const env = 1 - i / data.length;
+          data[i] = white * (0.65 + Math.random() * 0.35) * Math.pow(env, 1.8);
+        }
+
+        // 简单脉冲响应，用于模拟夜空中的反射尾音
+        impulseBuffer = audioCtx.createBuffer(2, sampleRate * 1.4, sampleRate);
+        for (let ch = 0; ch < 2; ch++) {
+          const chData = impulseBuffer.getChannelData(ch);
+          for (let i = 0; i < chData.length; i++) {
+            const t = i / chData.length;
+            chData[i] =
+              (Math.random() * 2 - 1) *
+              Math.pow(1 - t, 3.2) *
+              (ch === 0 ? 1 : 0.9);
+          }
+        }
+      }
+
+      async function unlockAudio() {
+        if (!audioEnabled) return;
+        if (!audioCtx) setupAudio();
+        if (!audioCtx) return;
+        if (audioCtx.state !== "running") {
+          try {
+            await audioCtx.resume();
+          } catch (_) {
+            return;
+          }
+        }
+        audioUnlocked = audioCtx.state === "running";
+        if (audioUnlocked) {
+          // 用极短低音脉冲“点亮”音频链路，避免部分浏览器首次无声
+          try {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(90, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(
+              0.03,
+              audioCtx.currentTime + 0.01
+            );
+            gain.gain.exponentialRampToValueAtTime(
+              0.0001,
+              audioCtx.currentTime + 0.07
+            );
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 0.08);
+          } catch (_) {}
+        }
+      }
+
+      function playExplosionSound(
+        intensity = 1,
+        posX = width * 0.5,
+        posY = height * 0.35
+      ) {
+        if (!audioEnabled || !audioUnlocked || !audioCtx || !noiseBuffer)
+          return;
+        const now = audioCtx.currentTime;
+        if (now - lastSoundAt < 0.095) return;
+        lastSoundAt = now;
+
+        const far = Math.max(
+          0,
+          Math.min(1, (height * 0.78 - posY) / (height * 0.78))
+        );
+        const variant = Math.random();
+        const profile = variant < 0.34 ? 0 : variant < 0.67 ? 1 : 2; // 0:紧凑 1:厚重 2:脆亮
+        const profileMul = profile === 0 ? 0.94 : profile === 1 ? 1.08 : 1.0;
+        const travelDelay = 0.03 + far * 0.14 + rnd(0, 0.018);
+        const panVal = Math.max(
+          -0.85,
+          Math.min(0.85, (posX / width - 0.5) * 1.45)
+        );
+        const intensityScale =
+          (0.74 + intensity * 0.28) * (1 - far * 0.2) * rnd(0.93, 1.09);
+        const t0 = now + travelDelay;
+
+        const master = audioCtx.createGain();
+        master.gain.value = Math.min(1.0, intensityScale);
+
+        const pan = audioCtx.createStereoPanner
+          ? audioCtx.createStereoPanner()
+          : null;
+        if (pan) pan.pan.setValueAtTime(panVal, t0);
+
+        const comp = audioCtx.createDynamicsCompressor();
+        comp.threshold.value = -24;
+        comp.knee.value = 24;
+        comp.ratio.value = 4.6 + rnd(-0.8, 0.9);
+        comp.attack.value = 0.001;
+        comp.release.value = 0.2 + rnd(0, 0.12);
+
+        const dryGain = audioCtx.createGain();
+        dryGain.gain.value = 1;
+        master.connect(dryGain);
+        if (pan) {
+          dryGain.connect(pan);
+          pan.connect(comp);
+        } else {
+          dryGain.connect(comp);
+        }
+        comp.connect(audioCtx.destination);
+
+        if (impulseBuffer) {
+          const convolver = audioCtx.createConvolver();
+          convolver.buffer = impulseBuffer;
+          const wetGain = audioCtx.createGain();
+          wetGain.gain.value =
+            (0.07 + far * 0.05) * (profile === 1 ? 1.12 : 0.95);
+          master.connect(convolver);
+          convolver.connect(wetGain);
+          if (pan) wetGain.connect(pan);
+          else wetGain.connect(comp);
+        }
+
+        // 冲击波层：极短宽频瞬态
+        const shock = audioCtx.createBufferSource();
+        shock.buffer = noiseBuffer;
+        const shockBP = audioCtx.createBiquadFilter();
+        shockBP.type = "highpass";
+        shockBP.frequency.setValueAtTime(
+          (650 + rnd(-160, 260)) * (profile === 2 ? 1.08 : 0.96),
+          t0
+        );
+        const shockGain = audioCtx.createGain();
+        shockGain.gain.setValueAtTime(0.0001, t0);
+        shockGain.gain.linearRampToValueAtTime(
+          (0.4 + rnd(0, 0.1)) * intensityScale * profileMul,
+          t0 + rnd(0.0015, 0.0032)
+        );
+        shockGain.gain.exponentialRampToValueAtTime(
+          0.0001,
+          t0 + rnd(0.05, 0.075)
+        );
+        shock.connect(shockBP);
+        shockBP.connect(shockGain);
+        shockGain.connect(master);
+        shock.start(t0);
+        shock.stop(t0 + rnd(0.07, 0.1));
+
+        // 爆裂簇：随机噪声脉冲，避免明显音高
+        const crackCount = (profile === 1 ? 3 : 4) + ((Math.random() * 3) | 0);
+        for (let i = 0; i < crackCount; i++) {
+          const t = t0 + rnd(0.004, profile === 1 ? 0.11 : 0.085);
+          const crack = audioCtx.createBufferSource();
+          crack.buffer = noiseBuffer;
+          const hp = audioCtx.createBiquadFilter();
+          hp.type = "highpass";
+          hp.frequency.setValueAtTime(
+            1100 + rnd(-280, 2100) * (profile === 2 ? 1.06 : 0.96),
+            t
+          );
+          const lp = audioCtx.createBiquadFilter();
+          lp.type = "lowpass";
+          lp.frequency.setValueAtTime(5000 + rnd(-1500, 1300), t);
+          const g = audioCtx.createGain();
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.linearRampToValueAtTime(
+            (0.045 + rnd(0, 0.07)) *
+              intensityScale *
+              (profile === 2 ? 1.08 : 0.96),
+            t + rnd(0.0014, 0.0034)
+          );
+          g.gain.exponentialRampToValueAtTime(
+            0.0001,
+            t + 0.035 + rnd(0, 0.085)
+          );
+          crack.connect(hp);
+          hp.connect(lp);
+          lp.connect(g);
+          g.connect(master);
+          crack.start(t);
+          crack.stop(t + rnd(0.11, 0.16));
+        }
+
+        // 主体轰隆：低通噪声塑形（无固定音高，去电音感）
+        const body = audioCtx.createBufferSource();
+        body.buffer = noiseBuffer;
+        const bodyLP = audioCtx.createBiquadFilter();
+        bodyLP.type = "lowpass";
+        bodyLP.frequency.setValueAtTime(
+          (230 + rnd(-65, 105)) * (profile === 1 ? 0.92 : 1.03),
+          t0 + 0.02
+        );
+        const bodyHP = audioCtx.createBiquadFilter();
+        bodyHP.type = "highpass";
+        bodyHP.frequency.setValueAtTime(35 + rnd(-10, 13), t0 + 0.02);
+        const bodyGain = audioCtx.createGain();
+        bodyGain.gain.setValueAtTime(0.0001, t0 + 0.018);
+        bodyGain.gain.linearRampToValueAtTime(
+          (0.56 + rnd(-0.05, 0.08)) * intensityScale * profileMul,
+          t0 + rnd(0.065, 0.095)
+        );
+        bodyGain.gain.exponentialRampToValueAtTime(
+          0.0001,
+          t0 + rnd(0.82, 1.04)
+        );
+        body.connect(bodyLP);
+        bodyLP.connect(bodyHP);
+        bodyHP.connect(bodyGain);
+        bodyGain.connect(master);
+        body.start(t0 + 0.018);
+        body.stop(t0 + rnd(0.9, 1.08));
+
+        // 低频尾震：更慢衰减的地面共振
+        const rumble = audioCtx.createBufferSource();
+        rumble.buffer = noiseBuffer;
+        const rumbleLP = audioCtx.createBiquadFilter();
+        rumbleLP.type = "lowpass";
+        rumbleLP.frequency.setValueAtTime(
+          (120 + rnd(-35, 45)) * (profile === 1 ? 0.92 : 1.02),
+          t0 + 0.1
+        );
+        const rumbleHP = audioCtx.createBiquadFilter();
+        rumbleHP.type = "highpass";
+        rumbleHP.frequency.setValueAtTime(20 + rnd(-2, 4), t0 + 0.1);
+        const rumbleGain = audioCtx.createGain();
+        rumbleGain.gain.setValueAtTime(0.0001, t0 + 0.08);
+        rumbleGain.gain.linearRampToValueAtTime(
+          (0.24 + rnd(-0.03, 0.08)) *
+            intensityScale *
+            (profile === 1 ? 1.08 : 0.95),
+          t0 + rnd(0.2, 0.28)
+        );
+        rumbleGain.gain.exponentialRampToValueAtTime(
+          0.0001,
+          t0 + rnd(1.35, 1.72)
+        );
+        rumble.connect(rumbleLP);
+        rumbleLP.connect(rumbleHP);
+        rumbleHP.connect(rumbleGain);
+        rumbleGain.connect(master);
+        rumble.start(t0 + 0.08);
+        rumble.stop(t0 + rnd(1.45, 1.78));
+      }
+
+      function playSuperExplosionSound(posX = width * 0.5, posY = height * 0.35) {
+        if (!audioEnabled || !audioUnlocked || !audioCtx || !noiseBuffer) return;
+        const now = audioCtx.currentTime;
+        if (now - lastSuperSoundAt < 0.18) return;
+        lastSuperSoundAt = now;
+
+        const far = Math.max(
+          0,
+          Math.min(1, (height * 0.78 - posY) / (height * 0.78))
+        );
+        const t0 = now + 0.045 + far * 0.17 + rnd(0, 0.015);
+        const panVal = Math.max(
+          -0.78,
+          Math.min(0.78, (posX / width - 0.5) * 1.28)
+        );
+
+        // 超级烟花：整体比普通烟花更大声
+        const master = audioCtx.createGain();
+        master.gain.value = Math.min(1.45, 1.2 + rnd(-0.05, 0.12));
+
+        const pan = audioCtx.createStereoPanner
+          ? audioCtx.createStereoPanner()
+          : null;
+        if (pan) pan.pan.setValueAtTime(panVal, t0);
+
+        const comp = audioCtx.createDynamicsCompressor();
+        comp.threshold.value = -30;
+        comp.knee.value = 26;
+        comp.ratio.value = 6.4;
+        comp.attack.value = 0.001;
+        comp.release.value = 0.42;
+
+        if (pan) {
+          master.connect(pan);
+          pan.connect(comp);
+        } else {
+          master.connect(comp);
+        }
+        comp.connect(audioCtx.destination);
+
+        if (impulseBuffer) {
+          const convolver = audioCtx.createConvolver();
+          convolver.buffer = impulseBuffer;
+          const wetGain = audioCtx.createGain();
+          wetGain.gain.value = 0.12 + far * 0.06;
+          master.connect(convolver);
+          convolver.connect(wetGain);
+          if (pan) wetGain.connect(pan);
+          else wetGain.connect(comp);
+        }
+
+        // 1) 近场冲击：爆点瞬态，但抑制刺耳高频
+        const shock = audioCtx.createBufferSource();
+        shock.buffer = noiseBuffer;
+        const shockHP = audioCtx.createBiquadFilter();
+        shockHP.type = "highpass";
+        shockHP.frequency.setValueAtTime(300 + rnd(-60, 90), t0);
+        const shockLP = audioCtx.createBiquadFilter();
+        shockLP.type = "lowpass";
+        shockLP.frequency.setValueAtTime(2200 + rnd(-450, 550), t0);
+        const shockGain = audioCtx.createGain();
+        shockGain.gain.setValueAtTime(0.0001, t0);
+        shockGain.gain.linearRampToValueAtTime(0.82 + rnd(-0.08, 0.1), t0 + 0.0035);
+        shockGain.gain.exponentialRampToValueAtTime(0.0001, t0 + rnd(0.12, 0.17));
+        shock.connect(shockHP);
+        shockHP.connect(shockLP);
+        shockLP.connect(shockGain);
+        shockGain.connect(master);
+        shock.start(t0);
+        shock.stop(t0 + 0.22);
+
+        // 2) 主爆轰：低频主体，形成“炸药”感
+        const body = audioCtx.createBufferSource();
+        body.buffer = noiseBuffer;
+        const bodyLP = audioCtx.createBiquadFilter();
+        bodyLP.type = "lowpass";
+        bodyLP.frequency.setValueAtTime(145 + rnd(-25, 30), t0 + 0.02);
+        const bodyHP = audioCtx.createBiquadFilter();
+        bodyHP.type = "highpass";
+        bodyHP.frequency.setValueAtTime(22 + rnd(-3, 4), t0 + 0.02);
+        const bodyGain = audioCtx.createGain();
+        bodyGain.gain.setValueAtTime(0.0001, t0 + 0.018);
+        bodyGain.gain.linearRampToValueAtTime(1.05 + rnd(-0.09, 0.13), t0 + rnd(0.085, 0.12));
+        bodyGain.gain.exponentialRampToValueAtTime(0.0001, t0 + rnd(1.2, 1.45));
+        body.connect(bodyLP);
+        bodyLP.connect(bodyHP);
+        bodyHP.connect(bodyGain);
+        bodyGain.connect(master);
+        body.start(t0 + 0.015);
+        body.stop(t0 + 1.5);
+
+        // 3) 次级爆轰：稍延迟的“二次闷雷”，更接近真实大爆炸
+        const afterBoom = audioCtx.createBufferSource();
+        afterBoom.buffer = noiseBuffer;
+        const afterLP = audioCtx.createBiquadFilter();
+        afterLP.type = "lowpass";
+        afterLP.frequency.setValueAtTime(110 + rnd(-18, 20), t0 + 0.12);
+        const afterHP = audioCtx.createBiquadFilter();
+        afterHP.type = "highpass";
+        afterHP.frequency.setValueAtTime(20 + rnd(-2, 3), t0 + 0.12);
+        const afterGain = audioCtx.createGain();
+        afterGain.gain.setValueAtTime(0.0001, t0 + 0.11);
+        afterGain.gain.linearRampToValueAtTime(0.72 + rnd(-0.06, 0.08), t0 + rnd(0.2, 0.28));
+        afterGain.gain.exponentialRampToValueAtTime(0.0001, t0 + rnd(1.55, 1.85));
+        afterBoom.connect(afterLP);
+        afterLP.connect(afterHP);
+        afterHP.connect(afterGain);
+        afterGain.connect(master);
+        afterBoom.start(t0 + 0.11);
+        afterBoom.stop(t0 + 1.95);
+
+        // 4) 超低频冲击：像地面被震一下（不带明显音高）
+        const subOsc = audioCtx.createOscillator();
+        subOsc.type = "sine";
+        subOsc.frequency.setValueAtTime(56 + rnd(-3, 4), t0 + 0.03);
+        subOsc.frequency.exponentialRampToValueAtTime(34 + rnd(-2, 2), t0 + 0.5);
+        const subGain = audioCtx.createGain();
+        subGain.gain.setValueAtTime(0.0001, t0 + 0.03);
+        subGain.gain.linearRampToValueAtTime(0.22 + rnd(-0.03, 0.04), t0 + 0.08);
+        subGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.62);
+        subOsc.connect(subGain);
+        subGain.connect(master);
+        subOsc.start(t0 + 0.03);
+        subOsc.stop(t0 + 0.65);
+
+        // 5) 少量碎裂声：保留真实感，但不抢低频主体
+        const crackCount = 2 + ((Math.random() * 2) | 0);
+        for (let i = 0; i < crackCount; i++) {
+          const t = t0 + rnd(0.02, 0.13);
+          const crack = audioCtx.createBufferSource();
+          crack.buffer = noiseBuffer;
+          const hp = audioCtx.createBiquadFilter();
+          hp.type = "highpass";
+          hp.frequency.setValueAtTime(850 + rnd(-140, 900), t);
+          const lp = audioCtx.createBiquadFilter();
+          lp.type = "lowpass";
+          lp.frequency.setValueAtTime(3600 + rnd(-700, 700), t);
+          const g = audioCtx.createGain();
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.linearRampToValueAtTime(0.08 + rnd(0, 0.05), t + rnd(0.002, 0.004));
+          g.gain.exponentialRampToValueAtTime(0.0001, t + rnd(0.08, 0.14));
+          crack.connect(hp);
+          hp.connect(lp);
+          lp.connect(g);
+          g.connect(master);
+          crack.start(t);
+          crack.stop(t + 0.16);
+        }
+      }
+
+      class Rocket {
+        constructor(x, targetY, color, power = 1) {
+          this.x = x;
+          this.y = height + rnd(10, 80);
+          this.vx = rnd(-0.35, 0.35);
+          this.vy = -rnd(7.2, 10.2) * power;
+          this.targetY = targetY;
+          this.color = color;
+          this.done = false;
+        }
+
+        update() {
+          this.x += this.vx;
+          this.y += this.vy;
+          this.vy += gravity * 0.7;
+
+          trails.push({
+            x: this.x,
+            y: this.y,
+            life: 22,
+            color: this.color,
+            size: rnd(1, 2.8),
+          });
+
+          if (!this.done && (this.y <= this.targetY || this.vy > -0.4)) {
+            this.done = true;
+            burst(this.x, this.y, this.color);
+          }
+        }
+
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, 2.2, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.shadowBlur = 16;
+          ctx.shadowColor = this.color;
+          ctx.fill();
+        }
+      }
+
+      class SuperRocket {
+        constructor(x, targetY) {
+          this.x = x;
+          this.y = height + rnd(20, 90);
+          this.vx = rnd(-0.2, 0.2);
+          this.vy = -rnd(8.6, 10.8);
+          this.targetY = targetY;
+          this.color = "#ffe08a";
+          this.done = false;
+        }
+
+        update() {
+          this.x += this.vx;
+          this.y += this.vy;
+          this.vy += gravity * 0.62;
+          trails.push({
+            x: this.x,
+            y: this.y,
+            life: 36,
+            color: "#ffd777",
+            size: rnd(2.4, 4.6),
+          });
+          trails.push({
+            x: this.x + rnd(-1.2, 1.2),
+            y: this.y,
+            life: 28,
+            color: "#fff4ce",
+            size: rnd(1.4, 2.8),
+          });
+
+          if (!this.done && (this.y <= this.targetY || this.vy > -0.2)) {
+            this.done = true;
+            launchSuperExplosion(this.x, this.y);
+          }
+        }
+
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, 5.4, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.shadowBlur = 34;
+          ctx.shadowColor = "#ffd272";
+          ctx.fill();
+        }
+      }
+
+      class Spark {
+        constructor(x, y, color, speed, angle, life, size) {
+          this.x = x;
+          this.y = y;
+          this.vx = Math.cos(angle) * speed;
+          this.vy = Math.sin(angle) * speed;
+          this.life = life;
+          this.maxLife = life;
+          this.size = size;
+          this.color = color;
+        }
+
+        update() {
+          this.x += this.vx;
+          this.y += this.vy;
+          this.vy += gravity;
+          this.vx *= 0.992;
+          this.vy *= 0.992;
+          this.life -= 1;
+        }
+
+        draw() {
+          const alpha = Math.max(this.life / this.maxLife, 0);
+          ctx.globalAlpha = alpha;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.shadowBlur = 16;
+          ctx.shadowColor = this.color;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      class HorseStar {
+        constructor(x, y, targetX, targetY, color) {
+          this.x = x;
+          this.y = y;
+          this.vx = rnd(-1.2, 1.2);
+          this.vy = rnd(-1.4, 1.1);
+          this.tx = targetX;
+          this.ty = targetY;
+          this.color = color;
+          this.life = 120 + ((Math.random() * 60) | 0);
+          this.maxLife = this.life;
+          this.size = rnd(1.3, 2.8);
+        }
+
+        update() {
+          const ax = (this.tx - this.x) * 0.017;
+          const ay = (this.ty - this.y) * 0.02;
+          this.vx = (this.vx + ax) * 0.9;
+          this.vy = (this.vy + ay) * 0.9;
+          this.x += this.vx;
+          this.y += this.vy;
+          this.life -= 1;
+        }
+
+        draw() {
+          const alpha = Math.max(0, Math.min(1, this.life / this.maxLife));
+          ctx.globalAlpha = 0.25 + alpha * 0.75;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.shadowBlur = 14;
+          ctx.shadowColor = this.color;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      function getHorseTargets() {
+        const off = document.createElement("canvas");
+        const w = Math.min(430, Math.floor(width * 0.62));
+        const h = Math.min(280, Math.floor(height * 0.36));
+        off.width = w;
+        off.height = h;
+        const octx = off.getContext("2d");
+        if (!octx) return [];
+
+        octx.clearRect(0, 0, w, h);
+        octx.textAlign = "center";
+        octx.textBaseline = "middle";
+        octx.fillStyle = "#fff";
+
+        const emojiSize = Math.floor(h * 0.78);
+        octx.font = `${emojiSize}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+        octx.fillText("🐎", w / 2, h * 0.54);
+
+        let data = octx.getImageData(0, 0, w, h).data;
+        let count = 0;
+        for (let i = 3; i < data.length; i += 4) if (data[i] > 90) count++;
+
+        if (count < 120) {
+          octx.clearRect(0, 0, w, h);
+          octx.font = `700 ${Math.floor(h * 0.72)}px "STKaiti", "KaiTi", "PingFang SC", sans-serif`;
+          octx.fillText("马", w / 2, h * 0.54);
+          data = octx.getImageData(0, 0, w, h).data;
+        }
+
+        const cx = width * 0.5;
+        const cy = height * 0.44;
+        const x0 = cx - w / 2;
+        const y0 = cy - h / 2;
+        const step = Math.max(3, Math.floor(w / 95));
+        const targets = [];
+        for (let y = 0; y < h; y += step) {
+          for (let x = 0; x < w; x += step) {
+            const idx = (y * w + x) * 4 + 3;
+            if (data[idx] > 100 && Math.random() > 0.18) {
+              targets.push({ x: x0 + x, y: y0 + y });
+            }
+          }
+        }
+        return targets;
+      }
+
+      function startHorseStarFinale() {
+        horseStars.length = 0;
+        const targets = getHorseTargets();
+        if (targets.length === 0) return;
+        horseFinaleActive = true;
+        const centerX = width * 0.5;
+        const centerY = height * 0.48;
+        for (const t of targets) {
+          const fromX = centerX + rnd(-150, 150);
+          const fromY = centerY + rnd(-95, 95);
+          const color = Math.random() < 0.8 ? "#ffdca0" : randomColor();
+          horseStars.push(new HorseStar(fromX, fromY, t.x, t.y, color));
+        }
+      }
+
+      function burst(x, y, baseColor) {
+        playExplosionSound(rnd(0.92, 1.16), x, y);
+        const layers = 2 + (Math.random() > 0.5 ? 1 : 0);
+        for (let l = 0; l < layers; l++) {
+          const count = 52 + ((Math.random() * 34) | 0);
+          const radiusFactor = 1 + l * 0.35;
+          for (let i = 0; i < count; i++) {
+            const angle = (Math.PI * 2 * i) / count + rnd(-0.07, 0.07);
+            const speed = rnd(1.6, 4.9) * radiusFactor;
+            const life = rnd(42, 84);
+            const size = rnd(1.2, 2.9);
+            const color = Math.random() < 0.2 ? randomColor() : baseColor;
+            sparks.push(new Spark(x, y, color, speed, angle, life, size));
+          }
+        }
+
+        for (let i = 0; i < 32; i++) {
+          trails.push({
+            x,
+            y,
+            life: rnd(14, 30),
+            color: "#fff1cc",
+            size: rnd(1, 2.2),
+          });
+        }
+      }
+
+      function launchRocket(
+        x = rnd(width * 0.08, width * 0.92),
+        y = rnd(height * 0.16, height * 0.58),
+        power = 1
+      ) {
+        rockets.push(new Rocket(x, y, randomColor(), power));
+      }
+
+      function spawnShockwave(x, y, radius) {
+        shockwaves.push({
+          x,
+          y,
+          radius: 8,
+          maxRadius: radius,
+          life: 34,
+          maxLife: 34,
+          width: rnd(2.4, 3.8),
+        });
+      }
+
+      function launchSuperExplosion(cx, cy) {
+        setStatus("超级烟花爆发：全场高能礼花", true);
+        playSuperExplosionSound(cx, cy);
+
+        for (let ring = 0; ring < 4; ring++) {
+          const count = 88 + ring * 30;
+          const ringScale = 1.15 + ring * 0.4;
+          const baseColor = randomColor();
+          for (let i = 0; i < count; i++) {
+            const angle = (Math.PI * 2 * i) / count + rnd(-0.05, 0.05);
+            const speed = rnd(2.8, 6.6) * ringScale;
+            sparks.push(
+              new Spark(
+                cx,
+                cy,
+                Math.random() < 0.26 ? randomColor() : baseColor,
+                speed,
+                angle,
+                rnd(78, 136),
+                rnd(2.1, 4.8)
+              )
+            );
+          }
+        }
+
+        setTimeout(() => {
+          burst(cx + rnd(-40, 40), cy + rnd(-28, 24), "#ffd96c");
+        }, 220);
+
+        setTimeout(() => {
+          burst(cx + rnd(-55, 55), cy + rnd(-34, 28), randomColor());
+        }, 560);
+      }
+
+      function launchSuperFirework(x, y) {
+        const cx = Math.max(width * 0.1, Math.min(width * 0.9, x));
+        const cy = Math.max(height * 0.18, Math.min(height * 0.62, y));
+        setStatus("超级烟花释放中：火箭升空中...", true);
+        superRockets.push(new SuperRocket(cx, cy));
+      }
+
+      function updateFireworks() {
+        for (let i = rockets.length - 1; i >= 0; i--) {
+          rockets[i].update();
+          if (rockets[i].done) rockets.splice(i, 1);
+        }
+
+        for (let i = superRockets.length - 1; i >= 0; i--) {
+          superRockets[i].update();
+          if (superRockets[i].done) superRockets.splice(i, 1);
+        }
+
+        for (let i = sparks.length - 1; i >= 0; i--) {
+          sparks[i].update();
+          if (sparks[i].life <= 0) sparks.splice(i, 1);
+        }
+
+        for (let i = trails.length - 1; i >= 0; i--) {
+          trails[i].life -= 1;
+          trails[i].y += 0.03;
+          if (trails[i].life <= 0) trails.splice(i, 1);
+        }
+
+        for (let i = horseStars.length - 1; i >= 0; i--) {
+          horseStars[i].update();
+          if (horseStars[i].life <= 0 && !horseFinaleActive) {
+            horseStars.splice(i, 1);
+          }
+        }
+
+        for (let i = shockwaves.length - 1; i >= 0; i--) {
+          const w = shockwaves[i];
+          w.radius += (w.maxRadius - w.radius) * 0.14;
+          w.life -= 1;
+          if (w.life <= 0) shockwaves.splice(i, 1);
+        }
+
+        screenFlash *= 0.86;
+        if (screenFlash < 0.02) screenFlash = 0;
+      }
+
+      function drawFireworks() {
+        const activeParticles = rockets.length + sparks.length + trails.length;
+        ctx.globalCompositeOperation = "source-over";
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = activeParticles > 0 ? "rgba(0, 0, 0, 0.62)" : "#000";
+        ctx.fillRect(0, 0, width, height);
+
+        if (screenFlash > 0) {
+          ctx.fillStyle = `rgba(255, 232, 170, ${Math.min(0.42, screenFlash)})`;
+          ctx.fillRect(0, 0, width, height);
+        }
+
+        for (const t of trails) {
+          const a = Math.max(t.life / 56, 0);
+          ctx.globalAlpha = a * 0.7;
+          ctx.beginPath();
+          ctx.arc(t.x, t.y, t.size, 0, Math.PI * 2);
+          ctx.fillStyle = t.color;
+          ctx.shadowBlur = 0;
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        rockets.forEach((r) => r.draw());
+        superRockets.forEach((r) => r.draw());
+        sparks.forEach((s) => s.draw());
+        horseStars.forEach((h) => h.draw());
+
+        for (const w of shockwaves) {
+          const a = Math.max(0, w.life / w.maxLife);
+          ctx.globalAlpha = a * 0.55;
+          ctx.beginPath();
+          ctx.arc(w.x, w.y, w.radius, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(255, 244, 198, 0.96)";
+          ctx.lineWidth = w.width;
+          ctx.shadowBlur = 16;
+          ctx.shadowColor = "rgba(255, 190, 112, 0.65)";
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
+
+        if (pointerVisible) {
+          ctx.beginPath();
+          ctx.arc(pointerLast.x, pointerLast.y, 9, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.82)";
+          ctx.lineWidth = 1.6;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = "rgba(255, 255, 255, 0.55)";
+          ctx.stroke();
+        }
+      }
+
+      function getDist(a, b) {
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+
+      function lerpPoint(a, b, t) {
+        return {
+          x: a.x + (b.x - a.x) * t,
+          y: a.y + (b.y - a.y) * t,
+        };
+      }
+
+      function analyzeHand(landmarks) {
+        const wrist = landmarks[0];
+        const mcpIndex = landmarks[5];
+        const mcpPinky = landmarks[17];
+        const palmScale = getDist(mcpIndex, mcpPinky) + 0.001;
+
+        const tips = [4, 8, 12, 16, 20].map((idx) => landmarks[idx]);
+        const mcp = [2, 5, 9, 13, 17].map((idx) => landmarks[idx]);
+
+        const opennessValues = tips.map(
+          (tip) => getDist(tip, wrist) / palmScale
+        );
+        openness =
+          opennessValues.reduce((a, b) => a + b, 0) / opennessValues.length;
+
+        const extended = tips.map(
+          (tip, i) =>
+            getDist(tip, wrist) - getDist(mcp[i], wrist) > palmScale * 0.24
+        );
+        const extendedCount = extended.filter(Boolean).length;
+        const [thumbEx, indexEx, middleEx, ringEx, pinkyEx] = extended;
+
+        return {
+          openness,
+          extendedCount,
+          isOpen: openness > 1.86 && extendedCount >= 4,
+          isFist: openness < 1.31 && extendedCount <= 2,
+          isPoint: indexEx && !middleEx && !ringEx && !pinkyEx,
+          // ✌️ 容错：食指+中指伸出即可，允许轻微抖动
+          isSuper: indexEx && middleEx && extendedCount <= 3,
+          indexTip: landmarks[8],
+        };
+      }
+
+      function triggerShow() {
+        showRunning = true;
+        finishTriggered = false;
+        blessing.classList.remove("show");
+        horseGreeting.classList.remove("show");
+        stopHongbaoRain();
+        horseFinaleActive = false;
+        horseStars.length = 0;
+        shockwaves.length = 0;
+        setIntroCenterHint(false);
+        setStatus("表演进行中：张开五指全屏烟花，单指可定点发射", true);
+      }
+
+      function finishShow() {
+        if (finishTriggered) return;
+        finishTriggered = true;
+        showRunning = false;
+        blessing.classList.remove("show");
+        horseGreeting.classList.remove("show");
+        stopHongbaoRain();
+        horseFinaleActive = false;
+        horseStars.length = 0;
+        shockwaves.length = 0;
+        setStatus("表演结束：新春快乐，马年大吉", false);
+
+        // 收官礼花：从左到右依次升空
+        const columns = 12;
+        const left = width * 0.1;
+        const gap = (width * 0.8) / (columns - 1);
+        for (let i = 0; i < columns; i++) {
+          const xBase = left + gap * i;
+          setTimeout(() => {
+            launchRocket(
+              xBase + rnd(-16, 16),
+              rnd(height * 0.2, height * 0.45),
+              1.12
+            );
+            launchRocket(
+              xBase + rnd(-20, 20),
+              rnd(height * 0.2, height * 0.45),
+              1.06
+            );
+          }, i * 95);
+        }
+
+        const finaleDuration = (columns - 1) * 95 + 1200;
+        setTimeout(() => {
+          if (!finishTriggered) return;
+          // 爆炸后由星光汇聚出骏马轮廓
+          startHorseStarFinale();
+          launchRocket(width * 0.32, height * 0.34, 1.08);
+          launchRocket(width * 0.68, height * 0.34, 1.08);
+          horseGreeting.classList.add("show");
+        }, finaleDuration);
+
+        setTimeout(() => {
+          if (!finishTriggered) return;
+          horseFinaleActive = false;
+          horseGreeting.classList.remove("show");
+          blessing.classList.add("show");
+          startHongbaoRain();
+        }, finaleDuration + 1900);
+      }
+
+      function onHandResults(results) {
+        pointerVisible = false;
+        const now = performance.now();
+        maybeShowIntroCenterHint(now);
+
+        if (
+          !results.multiHandLandmarks ||
+          results.multiHandLandmarks.length === 0
+        ) {
+          if (finishTriggered) return;
+          if (showRunning) {
+            setStatus("手离开画面：烟花保持自动表演", true);
+            setIntroCenterHint(false);
+            if (now - lastAutoLaunch > 260) {
+              launchRocket();
+              lastAutoLaunch = now;
+            }
+          } else {
+            if (!introNoHandShown) {
+              introNoHandShown = true;
+              setStatus("未检测到手势：先为你点亮一段暖场烟花...", false);
+              setIntroCenterHint(false);
+              launchIntroBatch(7, 140, 1);
+              introPromptPending = true;
+              introPromptMinTime = now + 2100;
+            } else {
+              if (introPromptPending) {
+                setStatus("暖场烟花进行中，请稍候...", false);
+                setIntroCenterHint(false);
+              } else {
+                setStatus(
+                  "请将手放入画面，五指张开并停住 0.5 秒开启表演",
+                  false
+                );
+                setIntroCenterHint(true);
+              }
+            }
+          }
+          startHoldFrames = 0;
+          fistDirectFrames = 0;
+          superTracking = false;
+          lastPathEmit = null;
+          return;
+        }
+
+        setIntroCenterHint(false);
+        if (!audioUnlocked) unlockAudio();
+
+        const hand = analyzeHand(results.multiHandLandmarks[0]);
+        const tip = hand.indexTip;
+        const x = (1 - tip.x) * width;
+        const y = tip.y * height;
+        pointerVisible = hand.isPoint || hand.isSuper;
+
+        if (hand.isOpen || hand.isPoint || hand.isSuper) {
+          // 防止从张手/指向切换过程中被瞬间误判为握拳
+          fistGuardUntil = now + 320;
+        }
+
+        if (!showRunning) {
+          if (hand.isOpen) {
+            startHoldFrames += 1;
+            const progress = Math.min(
+              100,
+              Math.floor((startHoldFrames / 14) * 100)
+            );
+            const label = finishTriggered ? "重新开场确认中" : "开场手势确认中";
+            setStatus(`${label} ${progress}%：保持五指张开`, true);
+            if (startHoldFrames >= 14) triggerShow();
+          } else {
+            startHoldFrames = 0;
+            if (finishTriggered) {
+              setStatus(
+                "表演已结束：再次五指张开并停住 0.5 秒可重新开始",
+                false
+              );
+            } else {
+              setStatus("请五指张开并停住 0.5 秒开启表演", false);
+            }
+          }
+        }
+
+        if (showRunning) {
+          if (hand.isSuper) {
+            const dSuper = Math.hypot(x - pointerLast.x, y - pointerLast.y);
+            pointerLast.x = pointerLast.x * 0.5 + x * 0.5;
+            pointerLast.y = pointerLast.y * 0.5 + y * 0.5;
+
+            if (!superTracking) {
+              launchSuperFirework(pointerLast.x, pointerLast.y);
+              lastSuperLaunch = now;
+              superTracking = true;
+            }
+
+            if (!lastPathEmit) {
+              lastPathEmit = { x: pointerLast.x, y: pointerLast.y };
+            }
+
+            // ✌️ 像单指一样跟随发射，但频率更慢
+            const segSuper = getDist(pointerLast, lastPathEmit);
+            if (segSuper >= SUPER_PATH_STEP && now - lastSuperLaunch > SUPER_PATH_COOLDOWN) {
+              launchSuperFirework(pointerLast.x, pointerLast.y);
+              lastPathEmit = { x: pointerLast.x, y: pointerLast.y };
+              lastSuperLaunch = now;
+            } else if (dSuper > 3 && now - lastSuperLaunch > SUPER_PATH_FALLBACK) {
+              launchSuperFirework(pointerLast.x, pointerLast.y);
+              lastPathEmit = { x: pointerLast.x, y: pointerLast.y };
+              lastSuperLaunch = now;
+            }
+            setStatus("超级轨迹模式：✌️ 跟随发射（慢频）", true);
+          }
+
+          if (hand.isOpen) {
+            const density = Math.min(
+              Math.max((hand.openness - 1.65) * 220, 90),
+              640
+            );
+            const autoDelay = 860 - density;
+            if (now - lastAutoLaunch > autoDelay) {
+              launchRocket();
+              lastAutoLaunch = now;
+            }
+            setStatus("全屏模式：五指张开中，随机烟花升空", true);
+          } else {
+            if (!hand.isPoint && !hand.isFist && !hand.isSuper) {
+              setStatus("表演进行中：请五指张开放全屏，或单指定点发射", true);
+            }
+          }
+
+          if (hand.isPoint) {
+            const d = Math.hypot(x - pointerLast.x, y - pointerLast.y);
+            pointerLast.x = pointerLast.x * 0.5 + x * 0.5;
+            pointerLast.y = pointerLast.y * 0.5 + y * 0.5;
+
+            if (!lastPathEmit) {
+              lastPathEmit = { x: pointerLast.x, y: pointerLast.y };
+            }
+
+            // 低频轨迹发射：按轨迹补点，但严格限流避免过密
+            const segment = getDist(pointerLast, lastPathEmit);
+            if (
+              segment >= PATH_STEP &&
+              now - lastPointerLaunch > PATH_COOLDOWN
+            ) {
+              const steps = Math.min(3, Math.floor(segment / PATH_STEP));
+              for (let i = 1; i <= steps; i++) {
+                const p = lerpPoint(lastPathEmit, pointerLast, i / steps);
+                launchRocket(p.x, p.y, 1.04);
+              }
+              lastPathEmit = { x: pointerLast.x, y: pointerLast.y };
+              lastPointerLaunch = now;
+            } else if (d > 8 && now - lastPointerLaunch > PATH_FALLBACK) {
+              launchRocket(pointerLast.x, pointerLast.y, 1.03);
+              lastPathEmit = { x: pointerLast.x, y: pointerLast.y };
+              lastPointerLaunch = now;
+            }
+            setStatus("轨迹模式：单指移动方向依次升空烟花", true);
+          } else {
+            pointerLast = { x, y };
+            if (!hand.isSuper) {
+              superTracking = false;
+              lastPathEmit = null;
+            }
+          }
+
+          if (hand.isFist) {
+            if (now >= fistGuardUntil) {
+              fistDirectFrames += 1;
+              const p = Math.min(
+                100,
+                Math.floor((fistDirectFrames / 16) * 100)
+              );
+              setStatus(`检测到握拳 ${p}%：保持约 1 秒可直接收官`, true);
+              if (fistDirectFrames >= 16) {
+                finishShow();
+                return;
+              }
+            } else {
+              setStatus("手势切换中：请先稳定握拳再结束表演", true);
+            }
+          } else {
+            fistDirectFrames = Math.max(0, fistDirectFrames - 1);
+          }
+        }
+      }
+
+      function animate() {
+        updateFireworks();
+        drawFireworks();
+        requestAnimationFrame(animate);
+      }
+
+      async function setupHands() {
+        const hands = new Hands({
+          locateFile: (file) =>
+            `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+        });
+
+        hands.setOptions({
+          maxNumHands: 1,
+          modelComplexity: 1,
+          minDetectionConfidence: 0.7,
+          minTrackingConfidence: 0.65,
+        });
+
+        hands.onResults(onHandResults);
+
+        const camera = new Camera(video, {
+          onFrame: async () => {
+            await hands.send({ image: video });
+          },
+          width: 640,
+          height: 480,
+        });
+
+        await camera.start();
+        setStatus(
+          "识别已启动：请先张开手掌点燃全场（点击页面开启真实音效）",
+          true
+        );
+      }
+
+      async function boot() {
+        setupAudio();
+        const unlockOnce = async () => {
+          await unlockAudio();
+          if (
+            audioUnlocked &&
+            introNoHandShown &&
+            !showRunning &&
+            !finishTriggered &&
+            !introSoundReplayDone
+          ) {
+            introSoundReplayDone = true;
+            setStatus("音效已开启：补放一段有声暖场烟花", false);
+            setIntroCenterHint(false);
+            launchIntroBatch(5, 130, 1.04);
+          }
+          if (audioUnlocked) {
+            setStatus("烟花音效已开启", true);
+          }
+        };
+        window.addEventListener("pointerdown", unlockOnce, { passive: true });
+        window.addEventListener("keydown", unlockOnce);
+
+        try {
+          setStatus("请求摄像头权限中...", false);
+          await setupHands();
+        } catch (err) {
+          console.error(err);
+          setStatus(
+            "无法访问摄像头，请检查浏览器权限或改用 localhost 打开页面",
+            false
+          );
+        }
+        animate();
+
+        // 初始环境粒子，保证打开就有氛围感
+        for (let i = 0; i < 5; i++) {
+          setTimeout(
+            () =>
+              launchRocket(
+                rnd(width * 0.15, width * 0.85),
+                rnd(height * 0.22, height * 0.55),
+                0.95
+              ),
+            i * 260
+          );
+        }
+      }
+
+      boot();
+    </script>
+  </body>
+</html>
